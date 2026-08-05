@@ -1,41 +1,97 @@
+import os
 import feedparser
+import tweepy
 
-feed = feedparser.parse(
-    "https://reviewaplikasi123.blogspot.com/feeds/posts/default?alt=rss"
-)
+# ==========================
+# Konfigurasi
+# ==========================
+RSS_URL = "https://reviewaplikasi123.blogspot.com/feeds/posts/default?alt=rss"
+LAST_POST_FILE = "last_post.txt"
+
+# ==========================
+# Membaca RSS
+# ==========================
+print("Mengambil RSS...")
+
+feed = feedparser.parse(RSS_URL)
+
+if not feed.entries:
+    print("❌ RSS kosong atau gagal dibaca.")
+    exit()
 
 entry = feed.entries[0]
 
-print(entry.title)
-print(entry.link)
+title = entry.title
+link = entry.link
 
-with open("last_post.txt") as f:
-    last = f.read().strip()
+print(f"Artikel terbaru : {title}")
+print(f"Link            : {link}")
 
-latest = feed.entries[0].link
+# ==========================
+# Membaca artikel terakhir
+# ==========================
+if os.path.exists(LAST_POST_FILE):
+    with open(LAST_POST_FILE, "r", encoding="utf-8") as f:
+        last = f.read().strip()
+else:
+    last = ""
 
-if latest == last:
-    print("Tidak ada artikel baru.")
+# ==========================
+# Cek apakah artikel baru
+# ==========================
+if link == last:
+    print("✅ Tidak ada artikel baru.")
     exit()
 
-tweet = f"""
-{entry.title}
+print("🆕 Artikel baru ditemukan.")
 
-{entry.link}
+# ==========================
+# Membuat Tweet
+# ==========================
+tweet = f"""🤖 Artikel Baru!
 
-#AI #Blogger
+{title}
+
+Baca selengkapnya di:
+{link}
+
+#AI #Teknologi #Blogger #Indonesia
 """
 
-import tweepy
+# Twitter/X membatasi panjang tweet
+if len(tweet) > 280:
+    tweet = tweet[:277] + "..."
 
+print("\nIsi Tweet:")
+print("--------------------------------")
+print(tweet)
+print("--------------------------------")
+
+# ==========================
+# Login Twitter/X
+# ==========================
 client = tweepy.Client(
-    consumer_key=...,
-    consumer_secret=...,
-    access_token=...,
-    access_token_secret=...
+    consumer_key=os.getenv("API_KEY"),
+    consumer_secret=os.getenv("API_SECRET"),
+    access_token=os.getenv("ACCESS_TOKEN"),
+    access_token_secret=os.getenv("ACCESS_SECRET"),
 )
 
-client.create_tweet(text=tweet)
+# ==========================
+# Kirim Tweet
+# ==========================
+try:
+    response = client.create_tweet(text=tweet)
 
-with open("last_post.txt","w") as f:
-    f.write(latest)
+    print("✅ Tweet berhasil dikirim.")
+    print(response)
+
+    with open(LAST_POST_FILE, "w", encoding="utf-8") as f:
+        f.write(link)
+
+    print("✅ last_post.txt diperbarui.")
+
+except Exception as e:
+    print("❌ Gagal mengirim tweet")
+    print(e)
+    exit(1)
