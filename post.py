@@ -1,17 +1,10 @@
-import os
+import feedparser
 
-files = os.listdir("articles")
-
-if len(files)==0:
-    exit()
-
-article = files[0]
-
-print("Posting:", article)
-
-# upload ke Blogger API
-
-os.rename(
-    "articles/"+article,
-    "posted_"+article
+feed = feedparser.parse(
+    "https://reviewaplikasi123.blogspot.com/feeds/posts/default?alt=rss"
 )
+
+entry = feed.entries[0]
+
+print(entry.title)
+print(entry.link)
